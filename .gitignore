@@ -1,0 +1,11 @@
+svs-env/
+__pycache__/
+.env
+
+test-files/
+
+db.sqlite
+
+config.yaml
+
+*.db
