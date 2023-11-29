@@ -2,6 +2,7 @@ import sqlite3
 import os
 from utils.store import Store
 from typing import Tuple
+import shutil
 
 class Datastore:
     def __init__(self, location: str) -> None:
@@ -10,8 +11,11 @@ class Datastore:
 
         self.location = location
         self.db_path = os.path.join(self.location, "datastore.db")
+        print("Database file: ", self.db_path)
         self.conn = sqlite3.connect(self.db_path)
         self.cursor = self.conn.cursor()
+
+        self.init_if_empty()
 
     def __enter__(self):
         return self
@@ -19,9 +23,29 @@ class Datastore:
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         self.conn.close()
 
-    def reset_db(self):
+        
+    def init_if_empty(self):
+        self.cursor.execute(
+            """
+            SELECT name FROM sqlite_master WHERE type='table' AND name='stores'
+            """
+        )
+        if not self.cursor.fetchone():
+            self.create_stores_table()
+
+    def reset(self):
         self.cursor.execute("DROP TABLE IF EXISTS stores")
         self.create_stores_table()
+        
+        for store in os.listdir(self.location):
+            if os.path.isdir(os.path.join(self.location, store)):
+                shutil.rmtree(os.path.join(self.location, store))
+
+    def hard_reset(self):
+        os.remove(self.db_path)
+        self.conn = sqlite3.connect(self.db_path)
+        self.cursor = self.conn.cursor()
+        self.reset()
 
     def create_stores_table(self):
         self.cursor.execute(
@@ -45,7 +69,7 @@ class Datastore:
         self.conn.commit()
         
         os.makedirs(os.path.join(self.location, name))
-        Store(os.path.join(self.location, name))
+        Store(os.path.join(self.location, name, "data.db"))
 
     def get_db_store(self, name: str) -> Tuple[str, str]:
         self.cursor.execute(
