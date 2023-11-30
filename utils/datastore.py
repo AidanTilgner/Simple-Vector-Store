@@ -71,6 +71,9 @@ class Datastore:
         os.makedirs(os.path.join(self.location, name))
         Store(os.path.join(self.location, name, "data.db"))
 
+    def get_store(self, name: str) -> Store:
+        return Store(os.path.join(self.location, name, "data.db"))
+
     def get_db_store(self, name: str) -> Tuple[str, str]:
         self.cursor.execute(
             """

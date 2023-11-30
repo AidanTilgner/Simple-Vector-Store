@@ -48,14 +48,32 @@ def reset():
 
 
 @click.group()
-def dstore():
+def stores():
     pass
 
-dstore.add_command(add)
-dstore.add_command(get)
-dstore.add_command(reset)
+stores.add_command(add)
+stores.add_command(get)
+stores.add_command(reset)
+
+
+@click.group()
+def store():
+    pass
+
+
+@click.command()
+@click.argument("name")
+def build(name):
+    print(f"Attempting to build store {name}")
+    try:
+        store = datastore.get_store(name)
+    except Exception as e:
+        print("Error building store: ", e)
+
+store.add_command(build)
 
 
 if __name__ == "__main__":
-    cli.add_command(dstore)
+    cli.add_command(stores)
+    cli.add_command(store)
     cli()
