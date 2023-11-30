@@ -2,6 +2,8 @@ svs-env/
 __pycache__/
 .env
 
+.vscode
+
 test-files/
 
 db.sqlite

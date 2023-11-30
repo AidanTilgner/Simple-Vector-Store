@@ -1,11 +1,12 @@
-import shutil
 import sys
+import shutil
+import click
 
-
-def get_terminal_width():
-    """Get the current width of the terminal."""
+def get_terminal_width() -> int:
+    """
+    Returns the width of the terminal in characters.
+    """
     return shutil.get_terminal_size().columns
-
 
 def update_progress(progress: float, message: str = "") -> None:
     """
@@ -13,8 +14,7 @@ def update_progress(progress: float, message: str = "") -> None:
 
     Accepts a float between 0 and 1. Any int will be converted to a float.
     """
-    term_width = get_terminal_width()
-    bar_length = max(20, term_width - 30)  # Adjust bar length based on terminal width
+    bar_length = 50  # Fixed length for the progress bar
 
     status = ""
     if progress < 0:
@@ -25,20 +25,13 @@ def update_progress(progress: float, message: str = "") -> None:
         status = "Done"
 
     block = int(round(bar_length * progress))
-
-    sys.stdout.write("\r" + " " * term_width)  # Clear line
-    sys.stdout.flush()
-
     progress_bar = f"Progress: [{'█' * block}{' ' * (bar_length - block)}] {round(progress * 100, 2)}% {status}"
 
-    sys.stdout.write("\r" + progress_bar)
-    sys.stdout.flush()
+    # Construct the full output with message
+    full_output = f"{progress_bar}\n{message}"
 
-    sys.stdout.write("\n" + " " * term_width)  # Clear message line
-    sys.stdout.write("\r" + message)  # Write new message
-    sys.stdout.flush()
+    # Clear the line and then print the new output
+    click.echo("\r" + " " * (len(full_output) + 10), nl=False)  # Clear with extra spaces
+    click.echo("\r" + full_output, nl=False)  # Carriage return to go back to line start
 
-    # Move the cursor back up to the start of the progress bar line
-    sys.stdout.write("\033[A\r")  # Move cursor up and to the beginning
-    sys.stdout.flush()
-
+    # If this still doesn't clear properly, increase the number of spaces used to clear the line

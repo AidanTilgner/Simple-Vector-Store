@@ -45,8 +45,12 @@ class Store:
             (path, title, content, filetype),
         )
 
-        title_embedding_binary = array.array('f', opc.generate_embedding(title)).tobytes()
-        content_embedding_binary = array.array('f', opc.generate_embedding(content)).tobytes()
+        title_embedding_binary = array.array(
+            "f", opc.generate_embedding(title)
+        ).tobytes()
+        content_embedding_binary = array.array(
+            "f", opc.generate_embedding(content)
+        ).tobytes()
 
         self.cursor.execute(
             """
@@ -67,7 +71,7 @@ class Store:
             """
         )
 
-    def search_similar_items(self, query, search_in='title'):
+    def search_similar_items(self, query, search_in="title"):
         """
         Search for items similar to the given query.
 
@@ -76,10 +80,10 @@ class Store:
         :return: A list of tuples containing the rowid and similarity distance of the matching items.
         """
         # Generate the embedding for the query
-        query_embedding = array.array('f', opc.generate_embedding(query)).tobytes()
+        query_embedding = array.array("f", opc.generate_embedding(query)).tobytes()
 
         # Choose the column to search against
-        column = 'title_embedding' if search_in == 'title' else 'content_embedding'
+        column = "title_embedding" if search_in == "title" else "content_embedding"
 
         # Execute the vector search query
         self.cursor.execute(
@@ -90,13 +94,13 @@ class Store:
             ORDER BY distance ASC
             LIMIT 10;
             """,
-            (query_embedding,)
+            (query_embedding,),
         )
 
         # Fetch and return the results
         return self.cursor.fetchall()
 
-    def search_and_map_similar_items(self, query: str, search_in='content'):
+    def search_and_map_similar_items(self, query: str, search_in="content"):
         """
         Search for items similar to the given query, and map the results to the corresponding rows in the knowledge base.
 
@@ -105,10 +109,10 @@ class Store:
         :return: A list of tuples containing the rowid and similarity distance of the matching items.
         """
         # Generate the embedding for the query
-        query_embedding = array.array('f', opc.generate_embedding(query)).tobytes()
+        query_embedding = array.array("f", opc.generate_embedding(query)).tobytes()
 
         # Choose the column to search against
-        column = 'title_embedding' if search_in == 'title' else 'content_embedding'
+        column = "title_embedding" if search_in == "title" else "content_embedding"
 
         # Step 1: Execute the vector search query to get rowids
         self.cursor.execute(
@@ -119,14 +123,14 @@ class Store:
             ORDER BY distance ASC
             LIMIT 10;
             """,
-            (query_embedding,)
+            (query_embedding,),
         )
         search_results = self.cursor.fetchall()
 
         results = []
         if search_results:
             self.cursor.execute(
-                    f"""
+                f"""
                     WITH SearchResults(rowid, distance) AS (
                         VALUES {','.join(f'({row[0]}, {row[1]})' for row in search_results)}
                     )
@@ -135,15 +139,63 @@ class Store:
                     INNER JOIN SearchResults ON knowledge_base.rowid = SearchResults.rowid
                     ORDER BY SearchResults.distance ASC;
                     """
-                )
+            )
             results = self.cursor.fetchall()
 
         return results
+
+    def get_all_titles(self):
+        self.cursor.execute(
+            """
+            SELECT title FROM knowledge_base
+            """
+        )
+        return self.cursor.fetchall()
+
+    def get_all(self):
+        """
+        Get all items in the knowledge base.
+        """
+        self.cursor.execute(
+            """
+            SELECT id, title, location, content, type FROM knowledge_base
+            """
+        )
+        return self.cursor.fetchall()
+
+    def update_item(self, id, title, content):
+        """
+        Update the item with the given id, title and content.
+        As well as updating the knowledge base, this function will also update the vector search table.
+        """
+        self.cursor.execute(
+            """
+            UPDATE knowledge_base
+            SET title = ?, content = ?
+            WHERE id = ?
+            """,
+            (title, content, id),
+        )
+
+        title_embedding_binary = array.array(
+            "f", opc.generate_embedding(title)
+        ).tobytes()
+        content_embedding_binary = array.array(
+            "f", opc.generate_embedding(content)
+        ).tobytes()
+
+        self.cursor.execute(
+            """
+            UPDATE vss_knowledge_base
+            SET title_embedding = ?, content_embedding = ?
+            WHERE rowid = ?
+            """,
+            (title_embedding_binary, content_embedding_binary, id),
+        )
+
+        self.conn.commit()
 
     @staticmethod
     def get_content_summary(content: str, length: int) -> str:
         """Returns a summary of the content."""
         return content[:length] + ("..." if len(content) > length else "")
-
-
-
