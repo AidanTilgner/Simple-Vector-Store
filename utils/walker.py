@@ -1,5 +1,4 @@
 import os
-from typing import Callable
 
 class Walker:
     def __init__(self, dir: str) -> None:

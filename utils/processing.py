@@ -9,7 +9,7 @@ file_types_to_process = [".txt", ".md"]
 files_to_process = []
 files_processed = []
 file_limit = int(os.environ["DEFAULT_FILE_LIMIT"])
-delay_per_request = int(os.environ["DEFAULT_DELAY_PER_REQUEST"])
+delay_per_request = float(os.environ["DEFAULT_DELAY_PER_REQUEST"])
 location = ""
 typeformat = {"txt": "text", "md": "markdown"}
 
@@ -21,7 +21,7 @@ class Processor:
             store: Store,
             file_types_to_process: list[str]=file_types_to_process,
             file_limit: int = file_limit,
-            delay_per_request: int = delay_per_request,
+            delay_per_request: float = delay_per_request,
         ) -> None:
         self.dir = dir
         self.store = store
@@ -31,6 +31,15 @@ class Processor:
         self.file_limit = file_limit
         self.delay_per_request = delay_per_request
         self.walker = Walker(dir)
+
+    def run_build(self):
+        print(f"Running build on store {self.store.get_name()}")
+        self.store.reset_db()
+        print(f"Getting files to process.")
+        self.get_files_to_process()
+        print(f"Found {len(self.files_to_process)} files to process. Processing...")
+        print("\n\n")
+        self.process_files()
 
 
     def file_is_private(self, file: str) -> bool:
@@ -69,7 +78,8 @@ class Processor:
             self.process_file(file)
 
     def process_file(self, file: str):
-        update_progress(len(files_processed) / len(files_to_process), message=f'Processing file "{file}"')
+        progress = len(files_processed) / len(files_to_process) if len(files_to_process) else 0
+        update_progress(progress, message=f'Processing file "{file}"')
 
         file_type = os.path.splitext(file)[1]
         formatted_type = typeformat[file_type[1:]]

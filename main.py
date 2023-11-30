@@ -2,6 +2,10 @@ import os
 from typing import Optional
 import click
 from utils.datastore import Datastore
+import time
+
+from utils.processing import Processor
+from utils.store import Store
 
 datastore = Datastore("datastore")
 
@@ -67,13 +71,50 @@ def build(name):
     print(f"Attempting to build store {name}")
     try:
         store = datastore.get_store(name)
+        store_data = datastore.get_db_store(name)
+        processor = Processor(
+            dir=store_data[1],
+            store=store,
+        )
+        processor.run_build()
     except Exception as e:
         print("Error building store: ", e)
 
+
+@click.command()
+@click.argument("name")
+@click.argument("query")
+@click.option("--column", help="The column to search in (title or content).", default="title")
+def search(name, query, column):
+    print(f"Searching store {name} for query '{query}' in column {column}")
+    try:
+        if column not in ["title", "content"]:
+            raise Exception("Invalid column, must be either 'title' or 'content'")
+        if column is None:
+            column = "content"
+        store = datastore.get_store(name)
+        results = store.search_and_map_similar_items(query, column)
+        
+        for result in results:
+            print(f"({result[0]}) {result[1]}:\n\n {Store.get_content_summary(result[2], 256)}\n\n\n")
+    except Exception as e:
+        print("Error searching store: ", e)
+
+
 store.add_command(build)
+store.add_command(search)
+
 
 
 if __name__ == "__main__":
+    start_time = time.time()
+
     cli.add_command(stores)
     cli.add_command(store)
     cli()
+
+    end_time = time.time()
+    time_diff = end_time - start_time
+    time_ms = time_diff * 1000
+    print(f"\n\n\nFinished in {round(time_ms, 2)} ms")
+

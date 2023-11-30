@@ -14,6 +14,9 @@ class Store:
         self.cursor = self.conn.cursor()
         sqlite_vss.load(self.conn)
 
+    def get_name(self):
+        return self.db_name
+
     def reset_db(self):
         self.cursor.execute("DROP TABLE IF EXISTS knowledge_base")
         self.cursor.execute("DROP TABLE IF EXISTS vss_knowledge_base")
@@ -93,7 +96,7 @@ class Store:
         # Fetch and return the results
         return self.cursor.fetchall()
 
-    def search_and_map_similar_items(self, query, search_in='content'):
+    def search_and_map_similar_items(self, query: str, search_in='content'):
         """
         Search for items similar to the given query, and map the results to the corresponding rows in the knowledge base.
 
@@ -136,4 +139,11 @@ class Store:
             results = self.cursor.fetchall()
 
         return results
+
+    @staticmethod
+    def get_content_summary(content: str, length: int) -> str:
+        """Returns a summary of the content."""
+        return content[:length] + ("..." if len(content) > length else "")
+
+
 
