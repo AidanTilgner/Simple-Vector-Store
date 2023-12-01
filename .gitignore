@@ -2,7 +2,7 @@ svs-env/
 __pycache__/
 .env
 
-.vscode
+.vscode/
 
 test-files/
 
