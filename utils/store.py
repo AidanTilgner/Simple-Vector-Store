@@ -145,6 +145,9 @@ class Store:
         return results
 
     def get_all_titles(self):
+        """
+        Gets all of the titles in the knowledge base.
+        """
         self.cursor.execute(
             """
             SELECT title FROM knowledge_base
