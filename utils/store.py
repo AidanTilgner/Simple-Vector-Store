@@ -109,7 +109,7 @@ class Store:
         # Fetch and return the results
         return self.cursor.fetchall()
 
-    def search_and_map_similar_items(self, query: str, search_in="content"):
+    def search_and_map_similar_items(self, query: str, search_in="content", limit=10):
         """
         Search for items similar to the given query, and map the results to the corresponding rows in the knowledge base.
 
@@ -130,9 +130,9 @@ class Store:
             FROM vss_knowledge_base
             WHERE vss_search({column}, ?)
             ORDER BY distance ASC
-            LIMIT 10;
+            LIMIT ?;
             """,
-            (query_embedding,),
+            (query_embedding, limit),
         )
         search_results = self.cursor.fetchall()
 

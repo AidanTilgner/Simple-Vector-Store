@@ -5,9 +5,12 @@ import os
 import sys
 from typing import Optional
 import click
+from dotenv import load_dotenv
 from utils.datastore import Datastore
 from utils.processing import Processor
 from utils.store import Store
+
+load_dotenv()
 
 datastore = Datastore("datastore")
 
