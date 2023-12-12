@@ -21,6 +21,7 @@ The SVS provides multiple utilities to suit your vector store needs.
 ### Planned Features
 - Increased store management features
 - Additional redundancy and edge-case checks
+- Additional indexing features, such as an "ignore" configuration, and easy control over indexable file types
 
 ### Proposed Features
 These aren't "planned" per-se, but if people show interest then I'd be willing to build them:
@@ -39,7 +40,7 @@ Then, navigate to the new directory:
 cd Simple-Vector-Store
 ```
 
-Then, install requirements with pip. I'd **also recommend using a virtual environment, with at least Python 3.9**.:
+Then, install requirements with pip. I'd **also recommend using a virtual environment, with at least Python 3.9**:
 
 ```bash
 pip install -r requirements.txt
@@ -47,17 +48,20 @@ pip install -r requirements.txt
 
 Then, copy the `.env.example` file into a new file called `.env`:
 
-Macos/Linux:
+Macos/Linux
 ```bash
 cp .env.example .env
 ```
 
-Windows:
+Windows
 ```bash
 copy .env.example .env
 ```
 
 And make sure to fill out the fields in the new .env file, especially your `OPENAI_API_KEY` for embeddings.
+
+## Privacy
+If you want a file or directory to remain private, and not be indexed, put it inside of a `_private` directory at the root of your source. Anything under a `_private` directory will not be indexed. I plan to add support for ignore features in the future as well, which will aid in protecting certain files from being indexed, and allow for easier codebase analysis.
 
 ## CLI Usage
 The script is fairly simple, and uses a click CLI to make things more intuitive. The CLI functionality all happens in the `main.py` script, so all the commands will start by running the `main.py`:
