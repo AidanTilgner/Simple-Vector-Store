@@ -1,10 +1,19 @@
+"""
+A file to deal with utilities relating to the global datastore.
+"""
+
 import sqlite3
 import os
-from utils.store import Store
-from typing import Tuple
 import shutil
+from typing import Tuple
+from utils.store import Store
+
 
 class Datastore:
+    """
+    A class to manage the global datastore.
+    """
+
     def __init__(self, location: str) -> None:
         if not os.path.exists(location):
             os.makedirs(location)
@@ -23,7 +32,6 @@ class Datastore:
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         self.conn.close()
 
-        
     def init_if_empty(self):
         self.cursor.execute(
             """
@@ -36,7 +44,7 @@ class Datastore:
     def reset(self):
         self.cursor.execute("DROP TABLE IF EXISTS stores")
         self.create_stores_table()
-        
+
         for store in os.listdir(self.location):
             if os.path.isdir(os.path.join(self.location, store)):
                 shutil.rmtree(os.path.join(self.location, store))
@@ -67,7 +75,7 @@ class Datastore:
             (name, location),
         )
         self.conn.commit()
-        
+
         os.makedirs(os.path.join(self.location, name))
         Store(os.path.join(self.location, name, "data.db"))
 
@@ -100,7 +108,7 @@ class Datastore:
         )
         self.conn.commit()
 
-        os.rmdir(os.path.join(self.location, name))
+        shutil.rmtree(os.path.join(self.location, name))
 
     def rename_store(self, old_name: str, new_name: str) -> None:
         self.cursor.execute(

@@ -119,7 +119,7 @@ def build(name):
 @click.argument("name")
 @click.argument("query")
 @click.option(
-    "--column", help="The column to search in (title or content).", default="title"
+    "--column", help="The column to search in (title or content).", default="content"
 )
 def search(name, query, column):
     """
@@ -162,9 +162,40 @@ def sync(name):
         print("Error syncing store: ", e)
 
 
+@click.command()
+@click.argument("name")
+@click.argument("new_name")
+def rename(name, new_name):
+    """
+    Rename a store.
+    """
+    print(f"Attempting to rename store {name} to {new_name}")
+    try:
+        datastore.rename_store(name, new_name)
+        print(f"Store {name} renamed to {new_name}")
+    except ValueError as e:
+        print("Error renaming store: ", e)
+
+
+@click.command()
+@click.argument("name")
+def remove(name):
+    """
+    Remove a store.
+    """
+    print(f"Attempting to remove store {name}")
+    try:
+        datastore.remove_store(name)
+        print(f"Store {name} removed")
+    except ValueError as e:
+        print("Error removing store: ", e)
+
+
 store.add_command(build)
 store.add_command(search)
 store.add_command(sync)
+store.add_command(rename)
+store.add_command(remove)
 
 
 if __name__ == "__main__":

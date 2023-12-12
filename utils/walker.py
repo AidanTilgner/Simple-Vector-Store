@@ -1,13 +1,23 @@
+"""
+A module dedicated to utilities around walking directories.
+"""
 import os
 
+
 class Walker:
-    def __init__(self, dir: str) -> None:
-        self.dir = dir
-        pass
+    """
+    A class for handling walking tasks.
+    """
+
+    def __init__(self, directory: str) -> None:
+        self.directory = directory
 
     def walk_files(self) -> list[str]:
+        """
+        Returns all of the files in a given directory as a list.
+        """
         files = []
-        for dirpath, _, filename in os.walk(self.dir):
+        for dirpath, _, filename in os.walk(self.directory):
             for file in filename:
                 file_path = os.path.join(dirpath, file)
                 files.append(file_path)

@@ -71,7 +71,7 @@ class Store:
             """
         )
 
-    def search_similar_items(self, query, search_in="title"):
+    def search_similar_items(self, query, search_in="content"):
         """
         Search for items similar to the given query.
 
@@ -161,12 +161,25 @@ class Store:
         """
         self.cursor.execute(
             """
-            SELECT id, title, location, content, type FROM knowledge_base
+            SELECT id, title, path, content, type FROM knowledge_base
             """
         )
         return self.cursor.fetchall()
 
-    def update_item(self, id, title, content):
+    def get_by_id(self, identifier):
+        """
+        Get the item with the given id.
+        """
+        self.cursor.execute(
+            """
+            SELECT id, title, path, content, type FROM knowledge_base
+            WHERE id = ?
+            """,
+            (identifier,),
+        )
+        return self.cursor.fetchone()
+
+    def update_item(self, identifier, title, content):
         """
         Update the item with the given id, title and content.
         As well as updating the knowledge base, this function will also update the vector search table.
@@ -177,7 +190,7 @@ class Store:
             SET title = ?, content = ?
             WHERE id = ?
             """,
-            (title, content, id),
+            (title, content, identifier),
         )
 
         title_embedding_binary = array.array(
@@ -197,6 +210,39 @@ class Store:
         )
 
         self.conn.commit()
+
+    def delete_item(self, id):
+        """
+        Delete the item with the given id.
+        """
+        self.cursor.execute(
+            """
+            DELETE FROM knowledge_base
+            WHERE id = ?
+            """,
+            (id,),
+        )
+        self.cursor.execute(
+            """
+            DELETE FROM vss_knowledge_base
+            WHERE rowid = ?
+            """,
+            (id,),
+        )
+        self.conn.commit()
+
+    def get_id_from_title(self, title):
+        """
+        Get the id of the item with the given title.
+        """
+        self.cursor.execute(
+            """
+            SELECT id FROM knowledge_base
+            WHERE title = ?
+            """,
+            (title,),
+        )
+        return self.cursor.fetchone()[0]
 
     @staticmethod
     def get_content_summary(content: str, length: int) -> str:

@@ -27,20 +27,16 @@ class Processor:
         file_limit: int = default_file_limit,
         delay_per_request: float = default_delay_per_request,
     ) -> None:
-        self.dir = directory
+        self.directory = directory
         self.store = store
         if len(file_types_to_process) == 0:
             self.file_types_to_process = [".txt", ".md"]
+        else:
+            self.file_types_to_process = file_types_to_process
         self.file_limit = file_limit
         self.delay_per_request = delay_per_request
 
-        self.walker = Walker(dir)
-
-        self.files_to_process: list[str] = []
-        self.files_processed: list[str] = []
-        self.unprocessed_files: list[str] = []
-        self.files_to_delete: list[str] = []
-        self.files_to_update: list[str] = []
+        self.walker = Walker(self.directory)
 
     def run_build(self):
         """
@@ -49,27 +45,17 @@ class Processor:
         print(f"Running build on store {self.store.get_name()}")
         self.store.reset_db()
         print("Getting files to process.")
-        self.get_all_directory_processable_files()
-        print(f"Found {len(self.files_to_process)} files to process. Processing...")
+        files_to_process = self.get_all_directory_processable_files()
+        print(f"Found {len(files_to_process)} files to process. Processing...")
         print("\n\n")
-        self.process_files()
+        self.process_files(files=files_to_process)
 
     def run_sync(self):
         """
         Run the sync process for the processing directory.
         """
-        print(f"Running sync on store {self.store.get_name()}")
+        print(f"Running sync on store {self.store.get_name()}, {self.directory}")
         self.identify_files_out_of_sync()
-
-    def flush_context(self):
-        """
-        Flush the context of the processor.
-        """
-        self.files_to_process = []
-        self.files_processed = []
-        self.files_to_process = []
-        self.files_to_delete = []
-        self.files_to_update = []
 
     def file_is_private(self, file: str) -> bool:
         """
@@ -97,25 +83,24 @@ class Processor:
         """
         Gets all the files to process.
         """
-        if len(self.files_to_process) >= self.file_limit:
-            return
+        new_files = []
 
         for file in self.walker.walk_files():
-            if len(self.files_to_process) >= self.file_limit:
+            if len(new_files) >= self.file_limit:
                 return
             if self.file_is_private(file):
                 continue
             if not self.file_is_type_to_process(file):
                 continue
-            self.files_to_process.append(file)
+            new_files.append(file)
 
-        return self.files_to_process
+        return new_files
 
-    def process_files(self) -> None:
+    def process_files(self, files: list[str]) -> None:
         """
         Process all files in the files_to_process list.
         """
-        for file in track(self.files_to_process, description="[green]Processing files"):
+        for file in track(files, description="[green]Processing files"):
             sleep(self.delay_per_request)
             self.process_file(file)
 
@@ -125,8 +110,8 @@ class Processor:
         """
         file_type = os.path.splitext(file)[1]
         formatted_type = typeformat[file_type[1:]]
-        formatted_path = os.path.relpath(file, self.dir)
-        formatted_title = os.path.splitext(os.path.basename(file))[0]
+        formatted_path = os.path.relpath(file, self.directory)
+        formatted_title = self.get_file_name_from_path(file)
 
         with open(file, "r", encoding="utf-8") as f:
             content = f.read()
@@ -143,8 +128,6 @@ class Processor:
                 print(f"Error processing file {file}: {e}")
                 raise e
 
-        self.files_processed.append(file)
-
     def identify_files_out_of_sync(self):
         """
         Identify files which meet the following criteria:
@@ -152,14 +135,28 @@ class Processor:
         - File is on datastore but doesn't exist on disk
         - File is on disk but doesn't exist in datastore
         """
-        self.flush_context()
-        self.identify_deleted_files()
-        self.identify_new_files()
-        self.identify_updated_files()
+        click.echo("Identifying files which were deleted...")
+        deleted_files = self.identify_deleted_files()
+        click.echo("Identifying new files...")
+        new_files = self.identify_new_files()
+        click.echo("Identifying files which were updated...")
+        updated_files = self.identify_updated_files()
 
-        click.echo(f"Found {len(self.files_to_delete)} files to delete.")
-        click.echo(f"Found {len(self.files_to_update)} files to update.")
-        click.echo(f"Found {len(self.files_to_process)} files to process.")
+        click.echo(f"Found {len(deleted_files)} files to delete.")
+        click.echo(f"Found {len(new_files)} files to add.")
+        click.echo(f"Found {len(updated_files)} files to update.")
+
+        click.echo("Deleting files...")
+        for file in track(deleted_files, description="[green]Deleting files"):
+            print(f"Deleting file {file}")
+
+        click.echo("Adding files...")
+        for file in track(new_files, description="[green]Adding files"):
+            print(f"Adding file {file}")
+
+        click.echo("Updating files...")
+        for file in track(updated_files, description="[green]Updating files"):
+            print(f"Updating file {file}")
 
     def identify_new_files(self):
         """
@@ -167,14 +164,14 @@ class Processor:
         - File exists on disk but not in datastore
         """
         processable_files = self.get_all_directory_processable_files()
-        db_files = self.store.get_all_titles()
+        db_files = [item[0] for item in self.store.get_all_titles()]
 
         new_files = []
 
         for file in processable_files:
-            if file not in db_files:
+            filename = self.get_file_name_from_path(file)
+            if filename not in db_files:
                 new_files.append(file)
-                self.files_to_process.append(file)
 
         return new_files
 
@@ -184,14 +181,13 @@ class Processor:
         - File exists in datastore but not on disk
         """
         processable_files = self.get_all_directory_processable_files()
-        db_files = self.store.get_all_titles()
+        db_files = [item[0] for item in self.store.get_all_titles()]
 
         deleted_files = []
 
         for file in db_files:
-            if file not in processable_files:
+            if file not in [self.get_file_name_from_path(f) for f in processable_files]:
                 deleted_files.append(file)
-                self.files_to_delete.append(file)
 
         return deleted_files
 
@@ -206,10 +202,17 @@ class Processor:
         updated_files = []
 
         for file in db_files:
-            with open(file[1], "r", encoding="utf-8") as f:
+            filepath = os.path.join(self.directory, file[2])
+            with open(filepath, "r", encoding="utf-8") as f:
                 content = f.read()
-                if content != file[2]:
-                    updated_files.append(file)
-                    self.files_to_update.append(file)
+                if content != file[3]:
+                    updated_files.append(file[2])
 
         return updated_files
+
+    @staticmethod
+    def get_file_name_from_path(path: str) -> str:
+        """
+        Get the file name from a path.
+        """
+        return os.path.splitext(os.path.basename(path))[0]
