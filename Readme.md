@@ -16,9 +16,9 @@ The SVS provides multiple utilities to suit your vector store needs.
 - Manage multiple stores
 - Synchronize stores with their source
 - Easily query a store
+- REST API script
 
 ### Planned Features
-- REST API script
 - Increased store management features
 - Additional redundancy and edge-case checks
 
