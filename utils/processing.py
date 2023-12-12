@@ -135,28 +135,40 @@ class Processor:
         - File is on datastore but doesn't exist on disk
         - File is on disk but doesn't exist in datastore
         """
-        click.echo("Identifying files which were deleted...")
         deleted_files = self.identify_deleted_files()
-        click.echo("Identifying new files...")
+        click.echo(f"\nFound {len(deleted_files)} files to delete.")
+
         new_files = self.identify_new_files()
-        click.echo("Identifying files which were updated...")
-        updated_files = self.identify_updated_files()
-
-        click.echo(f"Found {len(deleted_files)} files to delete.")
         click.echo(f"Found {len(new_files)} files to add.")
-        click.echo(f"Found {len(updated_files)} files to update.")
 
-        click.echo("Deleting files...")
-        for file in track(deleted_files, description="[green]Deleting files"):
-            print(f"Deleting file {file}")
+        updated_files = self.identify_updated_files()
+        click.echo(f"Found {len(updated_files)} files to update.\n\n")
 
-        click.echo("Adding files...")
-        for file in track(new_files, description="[green]Adding files"):
-            print(f"Adding file {file}")
+        if len(deleted_files) > 0:
+            click.echo("Deleting files...")
+            for file in track(deleted_files, description="[green]Deleting files"):
+                db_file = self.store.get_entry_from_path(file[2])
+                self.store.delete_item(db_file[0])
 
-        click.echo("Updating files...")
-        for file in track(updated_files, description="[green]Updating files"):
-            print(f"Updating file {file}")
+        if len(new_files) > 0:
+            click.echo("Adding files...")
+            for file in track(new_files, description="[green]Adding files"):
+                self.process_file(file)
+
+        if len(updated_files) > 0:
+            click.echo("Updating files...")
+            for file in track(updated_files, description="[green]Updating files"):
+                path = file[2]
+                identifier = file[0]
+                full_path = os.path.join(self.directory, path)
+                print(f"Full path: {full_path}")
+                with open(full_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                    self.store.update_item(
+                        identifier=identifier,
+                        title=self.get_file_name_from_path(path),
+                        content=content,
+                    )
 
     def identify_new_files(self):
         """
@@ -181,12 +193,14 @@ class Processor:
         - File exists in datastore but not on disk
         """
         processable_files = self.get_all_directory_processable_files()
-        db_files = [item[0] for item in self.store.get_all_titles()]
+        db_files = [(item[0], item[1], item[2]) for item in self.store.get_all()]
 
         deleted_files = []
 
         for file in db_files:
-            if file not in [self.get_file_name_from_path(f) for f in processable_files]:
+            if file[1] not in [
+                self.get_file_name_from_path(f) for f in processable_files
+            ]:
                 deleted_files.append(file)
 
         return deleted_files
@@ -203,10 +217,13 @@ class Processor:
 
         for file in db_files:
             filepath = os.path.join(self.directory, file[2])
-            with open(filepath, "r", encoding="utf-8") as f:
-                content = f.read()
-                if content != file[3]:
-                    updated_files.append(file[2])
+            try:
+                with open(filepath, "r", encoding="utf-8") as f:
+                    content = f.read()
+                    if content != file[3]:
+                        updated_files.append(file)
+            except FileNotFoundError:
+                continue
 
         return updated_files
 
@@ -216,3 +233,10 @@ class Processor:
         Get the file name from a path.
         """
         return os.path.splitext(os.path.basename(path))[0]
+
+    @staticmethod
+    def get_formatted_file_path(path: str) -> str:
+        """
+        Get the formatted file path.
+        """
+        return os.path.relpath(path, os.getcwd())

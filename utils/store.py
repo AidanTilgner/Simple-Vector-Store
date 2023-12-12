@@ -24,6 +24,9 @@ class Store:
         self.create_vss_table()
 
     def create_knowledge_base_table(self):
+        """
+        Creates the knowledge base table.
+        """
         self.cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS knowledge_base (
@@ -37,6 +40,9 @@ class Store:
         )
 
     def insert_into_knowledge_base(self, path, title, content, filetype):
+        """
+        Insert a new item into the knowledge base.
+        """
         self.cursor.execute(
             """
             INSERT INTO knowledge_base (path, title, content, type)
@@ -62,6 +68,9 @@ class Store:
         self.conn.commit()
 
     def create_vss_table(self):
+        """
+        Creates the vector search table.
+        """
         self.cursor.execute(
             """
             CREATE VIRTUAL TABLE IF NOT EXISTS vss_knowledge_base USING vss0(
@@ -179,11 +188,13 @@ class Store:
         )
         return self.cursor.fetchone()
 
-    def update_item(self, identifier, title, content):
+    def update_item(self, identifier: int, title: str, content: str):
         """
-        Update the item with the given id, title and content.
-        As well as updating the knowledge base, this function will also update the vector search table.
+        Update the item with the given id, title, and content.
+        This function will delete the old entry in the vector search table and create a new one,
+        as well as updating the knowledge base.
         """
+        # Update the knowledge base
         self.cursor.execute(
             """
             UPDATE knowledge_base
@@ -193,6 +204,7 @@ class Store:
             (title, content, identifier),
         )
 
+        # Generate embeddings for the new title and content
         title_embedding_binary = array.array(
             "f", opc.generate_embedding(title)
         ).tobytes()
@@ -200,18 +212,28 @@ class Store:
             "f", opc.generate_embedding(content)
         ).tobytes()
 
+        # Delete the old entry in the VSS table
         self.cursor.execute(
             """
-            UPDATE vss_knowledge_base
-            SET title_embedding = ?, content_embedding = ?
+            DELETE FROM vss_knowledge_base
             WHERE rowid = ?
             """,
-            (title_embedding_binary, content_embedding_binary, id),
+            (identifier,),
         )
 
+        # Insert a new entry in the VSS table
+        self.cursor.execute(
+            """
+            INSERT INTO vss_knowledge_base (title_embedding, content_embedding, rowid)
+            VALUES (?, ?, ?)
+            """,
+            (title_embedding_binary, content_embedding_binary, identifier),
+        )
+
+        # Commit the transaction
         self.conn.commit()
 
-    def delete_item(self, id):
+    def delete_item(self, identifier: int):
         """
         Delete the item with the given id.
         """
@@ -220,14 +242,14 @@ class Store:
             DELETE FROM knowledge_base
             WHERE id = ?
             """,
-            (id,),
+            (identifier,),
         )
         self.cursor.execute(
             """
             DELETE FROM vss_knowledge_base
             WHERE rowid = ?
             """,
-            (id,),
+            (identifier,),
         )
         self.conn.commit()
 
@@ -243,6 +265,32 @@ class Store:
             (title,),
         )
         return self.cursor.fetchone()[0]
+
+    def get_id_from_path(self, path):
+        """
+        Get the id of the item with the given path.
+        """
+        self.cursor.execute(
+            """
+            SELECT id FROM knowledge_base
+            WHERE path = ?
+            """,
+            (path,),
+        )
+        return self.cursor.fetchone()[0]
+
+    def get_entry_from_path(self, path):
+        """
+        Get the entry with the given path.
+        """
+        self.cursor.execute(
+            """
+            SELECT id, title, path, content, type FROM knowledge_base
+            WHERE path = ?
+            """,
+            (path,),
+        )
+        return self.cursor.fetchone()
 
     @staticmethod
     def get_content_summary(content: str, length: int) -> str:
