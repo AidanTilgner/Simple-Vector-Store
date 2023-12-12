@@ -80,7 +80,11 @@ class Datastore:
         Store(os.path.join(self.location, name, "data.db"))
 
     def get_store(self, name: str) -> Store:
-        return Store(os.path.join(self.location, name, "data.db"))
+        try:
+            return Store(os.path.join(self.location, name, "data.db"))
+        except Exception as e:
+            print(f"Error getting store {name}: {e}")
+            raise e
 
     def get_db_store(self, name: str) -> Tuple[str, str]:
         self.cursor.execute(
@@ -123,3 +127,12 @@ class Datastore:
             os.path.join(self.location, old_name),
             os.path.join(self.location, new_name),
         )
+
+    def check_store_exists(self, name: str) -> bool:
+        self.cursor.execute(
+            """
+            SELECT name FROM stores WHERE name = ?
+            """,
+            (name,),
+        )
+        return self.cursor.fetchone() is not None
