@@ -1,6 +1,0 @@
-required functionality:
-
-- User can add a directory, which will then be stored if it doesn't currently exist in a new datastore folder, with config info
-- User can vectorize a directory which currently exists in the datastore
-- User can synchronize a directory which currently exists in the datastore
-- User can delete and list directories which are in the datastore
