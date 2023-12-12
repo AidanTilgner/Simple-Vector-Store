@@ -1,7 +1,5 @@
 # Simple Vector Store
-Simple Vector Store (SVS) is a lightweight, **simple** vector store for your files. Simply point it at a directory, and it will create a vectorized version of that directory in the store of your choice, which can be easily searched semantically.
-
-Additional documentation is coming soon, as the feature set becomes more solid.
+Simple Vector Store (SVS) is a lightweight, **simple** vector store for your files. Simply point it at a directory, and it will create a vectorized version of that directory in the store of your choice, which can be easily searched semantically. Manage multiple stores, and use the REST API feature to connect your stores with other systems. Perfect for simple RAG Chatbots, knowledge base search, and plenty of other use-cases.
 
 ## Early Release and Contributing
 This repository is in its early stages, so **don't hesitate to reach out and/or report bugs**. I wan't this repository to be simple but reliable. Therefore, new bug reports are encouraged and will be addressed if reproduced. New features will be considered, but they won't be added unless they fit the scope of the project. If you still think the feature should be developed, feel free to fork the repository and let us know about it here.
