@@ -8,6 +8,9 @@ This repository is in its early stages, so **don't hesitate to reach out and/or 
 
 If you would like to contribute, go ahead and reach out to me, you can find my contact info on [my website](https://www.aidantilgner.dev).
 
+## Demo
+Check out my little [demo video](https://www.youtube.com/watch?v=wr4ogdQFGGg) if you're interested in seeing SVS in action.
+
 ## Features
 The SVS provides multiple utilities to suit your vector store needs.
 
