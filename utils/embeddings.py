@@ -11,7 +11,9 @@ openai.api_key = os.environ["OPENAI_API_KEY"]
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
 def get_embedding(text: str, model="text-embedding-ada-002") -> list[float]:
     try:
-        return openai.embeddings.create(input=[text], model=model).data[0].embedding
+        character_limit = 8000
+        cutoff_text = text[:character_limit]
+        return openai.embeddings.create(input=[cutoff_text], model=model).data[0].embedding
     except Exception as e:
         print(f"Error generating embeddings: {e}")
         raise e

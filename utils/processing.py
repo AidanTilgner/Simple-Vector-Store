@@ -88,9 +88,9 @@ class Processor:
         for file in self.walker.walk_files():
             if len(new_files) >= self.file_limit:
                 return
-            if self.file_is_private(file):
-                continue
             if not self.file_is_type_to_process(file):
+                continue
+            if self.file_is_private(file):
                 continue
             new_files.append(file)
 
@@ -161,7 +161,6 @@ class Processor:
                 path = file[2]
                 identifier = file[0]
                 full_path = os.path.join(self.directory, path)
-                print(f"Full path: {full_path}")
                 with open(full_path, "r", encoding="utf-8") as f:
                     content = f.read()
                     self.store.update_item(
