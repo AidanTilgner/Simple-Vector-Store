@@ -1,6 +1,7 @@
 """
 A module dedicated to utilities around walking directories.
 """
+
 import os
 
 

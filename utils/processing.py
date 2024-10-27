@@ -1,6 +1,7 @@
 """
 The processing module is responsible for providing utilities which help process files.
 """
+
 from time import sleep
 import os
 import frontmatter
@@ -8,6 +9,7 @@ from rich.progress import track
 import click
 from utils.walker import Walker
 from utils.store import Store
+import fnmatch
 
 default_file_limit = int(os.environ["DEFAULT_FILE_LIMIT"])
 default_delay_per_request = float(os.environ["DEFAULT_DELAY_PER_REQUEST"])
@@ -46,6 +48,9 @@ class Processor:
         self.store.reset_db()
         print("Getting files to process.")
         files_to_process = self.get_all_directory_processable_files()
+        if not files_to_process:
+            print("No files to process.")
+            return
         print(f"Found {len(files_to_process)} files to process. Processing...")
         print("\n\n")
         self.process_files(files=files_to_process)
@@ -70,6 +75,48 @@ class Processor:
                 return True
             return False
 
+    def load_svs_ignore(self):
+        """
+        Reads the .svsignore file.
+        """
+        found_ignore_files = []
+        with os.scandir(self.directory) as entries:
+            for entry in entries:
+                if entry.name == ".svsignore":
+                    found_ignore_files.append(entry.path)
+
+        ignore_patterns = []
+        for ignore_file in found_ignore_files:
+            with open(ignore_file, "r") as f:
+                for line in f:
+                    ignore_patterns.append(line.strip())
+        self.ignore_patterns = ignore_patterns
+        return ignore_patterns
+
+    def should_ignore_file(self, file: str) -> bool:
+        """
+        Checks if a given file should be ignored based on .svsignore patterns.
+
+        Args:
+            file (str): The path to the file being checked.
+
+        Returns:
+            bool: True if the file should be ignored, False otherwise.
+        """
+        # Get the relative path of the file from the root directory
+        rel_file = os.path.relpath(file, self.directory)
+
+        for pattern in self.ignore_patterns:
+            # Handle directory patterns (e.g., 'dir/' to ignore everything in a directory)
+            if pattern.endswith("/"):
+                if rel_file.startswith(pattern.rstrip("/")):
+                    return True
+            # Handle wildcard patterns and exact matches
+            elif fnmatch.fnmatch(rel_file, pattern):
+                return True
+
+        return False
+
     def file_is_type_to_process(self, file: str) -> bool:
         """
         Checks if a file is the right type to process.
@@ -89,6 +136,8 @@ class Processor:
             if len(new_files) >= self.file_limit:
                 return
             if self.file_is_private(file):
+                continue
+            if self.should_ignore_file(file):
                 continue
             if not self.file_is_type_to_process(file):
                 continue

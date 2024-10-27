@@ -67,10 +67,10 @@ And make sure to fill out the fields in the new .env file, especially your `OPEN
 If you want a file or directory to remain private, and not be indexed, put it inside of a `_private` directory at the root of your source. Anything under a `_private` directory will not be indexed. I plan to add support for ignore features in the future as well, which will aid in protecting certain files from being indexed, and allow for easier codebase analysis.
 
 ## CLI Usage
-The script is fairly simple, and uses a click CLI to make things more intuitive. The CLI functionality all happens in the `main.py` script, so all the commands will start by running the `main.py`:
+The script is fairly simple, and uses a click CLI to make things more intuitive. The CLI functionality all happens in the `svs.py` script, so all the commands will start by running the `svs.py`:
 
 ```bash
-python main.py <command> <subcommand> [...ARGUMENTS] [...OPTIONS]
+python svs.py <command> <subcommand> [...ARGUMENTS] [...OPTIONS]
 ```
 You can always alias this as well, however that's up to you unless people want it to be a part of the program directly.
 
@@ -78,19 +78,19 @@ You can always alias this as well, however that's up to you unless people want i
 Creating a `store` is essentially creating a vectorization of a certain location. You can create a store like so:
 
 ```bash
-python main.py stores add <store_name> <location_of_directory>
+python svs.py stores add <store_name> <location_of_directory>
 ```
 
 Here you'll want to replace `<store_name>` with the name you want to give your store, and `<location_of_direcory>` with the directory of files that you want to vectorize. Now that you have a store, verify that it's there with the `stores get` command:
 
 ```bash
-python main.py stores get
+python svs.py stores get
 ```
 
 The result should be a list of stores. Now, you can build that store by running the build command:
 
 ```bash
-python main.py store build <store_name>
+python svs.py store build <store_name>
 ```
 
 You should see a progress bar, and if everything is set up correctly, this should work accross the board. Keep in mind, this step uses the OpenAI Embeddings, and you may see [issues related to them](#openai-rate-limits).
@@ -98,7 +98,7 @@ You should see a progress bar, and if everything is set up correctly, this shoul
 Now that you've built your store, you can search it like so:
 
 ```bash
-python main.py store search <store_name> <query>
+python svs.py store search <store_name> <query>
 ```
 
 Where your `<query>` is the text string that you want to find related documents to. The result of this command should be a list of results with the beginnings of each document.
@@ -106,7 +106,7 @@ Where your `<query>` is the text string that you want to find related documents 
 Now, say you've made some changes to your knowledge base or directory which was previously vectorized, and you'd like to see those changes reflected. Simply run the `store sync` command to update your store without having to rebuild from scratch:
 
 ```bash
-python main.py store sync <store_name>
+python svs.py store sync <store_name>
 ```
 
 This will find all the differences between your current store and the source directory, and update the store accordingly.
@@ -121,7 +121,7 @@ There are two base commands as of now, each with a few subcommands:
 - `store`: work with an individual store
     - `build <name>`: builds the store based on the files in the given path
     - `search <name> <query> [column (title | content)]`: performs semantic search on the given store, add a `--column` flag with either "title" or "content" to search the respective column
-    - `sync <name>`: run synchronization for a given store, any changes made to the source will be reflected after synchronization 
+    - `sync <name>`: run synchronization for a given store, any changes made to the source will be reflected after synchronization
     - `rename <name> <new_name>`: rename a store from one name to another
     - `remove <name>`: remove a given store from the datastore
 

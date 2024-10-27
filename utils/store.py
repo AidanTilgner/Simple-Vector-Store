@@ -7,15 +7,24 @@ opc = OpenAIClient()
 
 
 class Store:
-    def __init__(self, db_name):
-        self.db_name = db_name
-        self.conn = sqlite3.connect(db_name)
+    name: str
+    db_path: str
+    conn: sqlite3.Connection
+    cursor: sqlite3.Cursor
+
+    def __init__(self, name, path):
+        self.name = name
+        self.db_path = path
+        self.conn = sqlite3.connect(self.db_path)
         self.conn.enable_load_extension(True)
         self.cursor = self.conn.cursor()
         sqlite_vss.load(self.conn)
 
     def get_name(self):
-        return self.db_name
+        return self.name
+
+    def get_db_path(self):
+        return self.db_path
 
     def reset_db(self):
         self.cursor.execute("DROP TABLE IF EXISTS knowledge_base")

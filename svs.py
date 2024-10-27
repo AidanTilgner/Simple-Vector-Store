@@ -1,6 +1,8 @@
+#!/usr/bin/env python3
 """
 The entrypoint for the CLI.
 """
+
 import os
 import sys
 from typing import Optional

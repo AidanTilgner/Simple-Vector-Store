@@ -1,7 +1,3 @@
-"""
-This file provides a simple Flask REST API for interacting with stores.
-"""
-
 import os
 import time
 from flask import Flask, request, jsonify
@@ -22,6 +18,123 @@ def get_datastore():
     return Datastore("datastore")
 
 
+@app.route("/stores", methods=["GET"])
+def get_store_by_query_params():
+    """
+    Retrieves a store by name and path from query parameters.
+    """
+    try:
+        name = request.args.get("name")
+        path = request.args.get("path")
+
+        if not name and not path:
+            return jsonify(
+                {"message": "Name or path query parameters are required."}
+            ), 400
+
+        datastore = get_datastore()
+
+        if path:
+            store_with_path = datastore.get_store_by_absolute_path(path)
+            if not store_with_path:
+                store_with_path = datastore.get_store_by_relative_path(path)
+            if not store_with_path:
+                return jsonify(
+                    {"message": f"Store with path '{path}' does not exist."}
+                ), 404
+
+            store_details = {
+                "name": store_with_path.get_name(),
+                "path": store_with_path.get_db_path(),
+            }
+
+            return jsonify(
+                {
+                    "message": f"Successfully retrieved store with path '{path}'.",
+                    "data": store_details,
+                }
+            )
+
+        if name:
+            datastore = get_datastore()
+            store_exists = datastore.check_store_exists(name)
+            if not store_exists:
+                return jsonify({"message": f"Store '{name}' does not exist."}), 404
+
+            store = datastore.get_store(name)
+            store_details = {
+                "name": store.get_name(),
+                "path": path,  # Assuming you want to include the path in the response
+            }
+
+            return jsonify(
+                {
+                    "message": f"Successfully retrieved store '{name}'.",
+                    "data": store_details,
+                }
+            )
+    except Exception as e:
+        return jsonify({"message": f"Error retrieving store: {e}"}), 500
+
+
+@app.route("/stores/<name>", methods=["GET"])
+def get_store(name: str):
+    """
+    Retrieves a store by name.
+    """
+    try:
+        datastore = get_datastore()
+        store_exists = datastore.check_store_exists(name)
+        if not store_exists:
+            return jsonify({"message": f"Store '{name}' does not exist."}), 404
+
+        store = datastore.get_store(name)
+        store_details = {
+            "name": store.get_name(),
+            "path": store.get_db_path(),
+        }
+
+        return jsonify(
+            {
+                "message": f"Successfully retrieved store '{name}'.",
+                "data": store_details,
+            }
+        )
+    except Exception as e:
+        return jsonify({"message": f"Error retrieving store: {e}"}), 500
+
+
+@app.route("/stores", methods=["POST"])
+def create_store():
+    """
+    Creates a new store with the given name and path.
+    """
+    try:
+        data = request.get_json()
+        if not data or "name" not in data or "path" not in data:
+            return jsonify({"message": "Name and path are required."}), 400
+
+        name = data["name"]
+        path = data["path"]
+
+        datastore = get_datastore()
+        store_exists = datastore.check_store_exists(name)
+        if store_exists:
+            return jsonify({"message": f"Store '{name}' already exists."}), 400
+
+        path_exists = datastore.check_store_with_path_exists(path)
+        if path_exists:
+            return jsonify(
+                {"message": f"Store with path '{path}' already exists."}
+            ), 400
+
+        datastore.add_new_store(name, path)
+        return jsonify({"message": f"Store '{name}' created successfully."}), 201
+
+    except Exception as e:
+        return jsonify({"message": f"Error creating store: {e}"}), 500
+
+
 @app.route("/stores/<name>/search", methods=["GET"])
 def search_store(name: str):
     """
@@ -30,13 +143,11 @@ def search_store(name: str):
     try:
         start_time = time.time()
 
-        print("Checking store exists: ", name)
         datastore = get_datastore()
         store_exists = datastore.check_store_exists(name)
         if not store_exists:
             return jsonify({"message": f"Store '{name}' does not exist."}), 404
 
-        print("getting store")
         store = datastore.get_store(name)
         query = request.args.get("query")
         if query is None:
