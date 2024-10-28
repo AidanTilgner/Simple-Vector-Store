@@ -89,6 +89,17 @@ class Store:
             """
         )
 
+    def is_knowledge_base_empty(self):
+        """
+        Check if the knowledge base is empty.
+        """
+        self.cursor.execute(
+            """
+            SELECT COUNT(*) FROM knowledge_base
+            """
+        )
+        return self.cursor.fetchone()[0] == 0
+
     def search_similar_items(self, query, search_in="content"):
         """
         Search for items similar to the given query.
@@ -97,6 +108,8 @@ class Store:
         :param search_in: The column to search in ('title' or 'content').
         :return: A list of tuples containing the rowid and similarity distance of the matching items.
         """
+        if self.is_knowledge_base_empty():
+            return []
         # Generate the embedding for the query
         query_embedding = array.array("f", opc.generate_embedding(query)).tobytes()
 
@@ -126,6 +139,8 @@ class Store:
         :param search_in: The column to search in ('title' or 'content').
         :return: A list of tuples containing the rowid and similarity distance of the matching items.
         """
+        if self.is_knowledge_base_empty():
+            return []
         # Generate the embedding for the query
         query_embedding = array.array("f", opc.generate_embedding(query)).tobytes()
 
