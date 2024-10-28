@@ -11,3 +11,5 @@ db.sqlite
 config.yaml
 
 *.db
+
+pyrightconfig.json

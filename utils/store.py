@@ -7,15 +7,24 @@ opc = OpenAIClient()
 
 
 class Store:
-    def __init__(self, db_name):
-        self.db_name = db_name
-        self.conn = sqlite3.connect(db_name)
+    name: str
+    db_path: str
+    conn: sqlite3.Connection
+    cursor: sqlite3.Cursor
+
+    def __init__(self, name, path):
+        self.name = name
+        self.db_path = path
+        self.conn = sqlite3.connect(self.db_path)
         self.conn.enable_load_extension(True)
         self.cursor = self.conn.cursor()
         sqlite_vss.load(self.conn)
 
     def get_name(self):
-        return self.db_name
+        return self.name
+
+    def get_db_path(self):
+        return self.db_path
 
     def reset_db(self):
         self.cursor.execute("DROP TABLE IF EXISTS knowledge_base")
@@ -80,6 +89,17 @@ class Store:
             """
         )
 
+    def is_knowledge_base_empty(self):
+        """
+        Check if the knowledge base is empty.
+        """
+        self.cursor.execute(
+            """
+            SELECT COUNT(*) FROM knowledge_base
+            """
+        )
+        return self.cursor.fetchone()[0] == 0
+
     def search_similar_items(self, query, search_in="content"):
         """
         Search for items similar to the given query.
@@ -88,6 +108,8 @@ class Store:
         :param search_in: The column to search in ('title' or 'content').
         :return: A list of tuples containing the rowid and similarity distance of the matching items.
         """
+        if self.is_knowledge_base_empty():
+            return []
         # Generate the embedding for the query
         query_embedding = array.array("f", opc.generate_embedding(query)).tobytes()
 
@@ -117,6 +139,8 @@ class Store:
         :param search_in: The column to search in ('title' or 'content').
         :return: A list of tuples containing the rowid and similarity distance of the matching items.
         """
+        if self.is_knowledge_base_empty():
+            return []
         # Generate the embedding for the query
         query_embedding = array.array("f", opc.generate_embedding(query)).tobytes()
 
@@ -143,7 +167,7 @@ class Store:
                     WITH SearchResults(rowid, distance) AS (
                         VALUES {','.join(f'({row[0]}, {row[1]})' for row in search_results)}
                     )
-                    SELECT knowledge_base.rowid, title, content, SearchResults.distance
+                    SELECT knowledge_base.rowid, title, content, path, type, SearchResults.distance
                     FROM knowledge_base
                     INNER JOIN SearchResults ON knowledge_base.rowid = SearchResults.rowid
                     ORDER BY SearchResults.distance ASC;

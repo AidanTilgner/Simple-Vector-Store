@@ -2,11 +2,13 @@ import sys
 import shutil
 import click
 
+
 def get_terminal_width() -> int:
     """
     Returns the width of the terminal in characters.
     """
     return shutil.get_terminal_size().columns
+
 
 def update_progress(progress: float, message: str = "") -> None:
     """
@@ -31,7 +33,9 @@ def update_progress(progress: float, message: str = "") -> None:
     full_output = f"{progress_bar}\n{message}"
 
     # Clear the line and then print the new output
-    click.echo("\r" + " " * (len(full_output) + 10), nl=False)  # Clear with extra spaces
+    click.echo(
+        "\r" + " " * (len(full_output) + 10), nl=False
+    )  # Clear with extra spaces
     click.echo("\r" + full_output, nl=False)  # Carriage return to go back to line start
 
     # If this still doesn't clear properly, increase the number of spaces used to clear the line

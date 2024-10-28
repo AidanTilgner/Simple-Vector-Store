@@ -20,7 +20,6 @@ class Datastore:
 
         self.location = location
         self.db_path = os.path.join(self.location, "datastore.db")
-        print("Database file: ", self.db_path)
         self.conn = sqlite3.connect(self.db_path)
         self.cursor = self.conn.cursor()
 
@@ -77,14 +76,21 @@ class Datastore:
         self.conn.commit()
 
         os.makedirs(os.path.join(self.location, name))
-        Store(os.path.join(self.location, name, "data.db"))
+        Store(name=name, path=os.path.join(self.location, name, "data.db"))
 
     def get_store(self, name: str) -> Store:
         try:
-            return Store(os.path.join(self.location, name, "data.db"))
+            return Store(name=name, path=os.path.join(self.location, name, "data.db"))
         except Exception as e:
             print(f"Error getting store {name}: {e}")
             raise e
+
+    def get_store_by_absolute_path(self, path: str) -> Store:
+        name = os.path.basename(os.path.dirname(path))
+        return self.get_store(name)
+
+    def get_store_by_relative_path(self, path: str) -> Store:
+        return self.get_store_by_absolute_path(os.path.join(self.location, path))
 
     def get_db_store(self, name: str) -> Tuple[str, str]:
         self.cursor.execute(
@@ -134,5 +140,14 @@ class Datastore:
             SELECT name FROM stores WHERE name = ?
             """,
             (name,),
+        )
+        return self.cursor.fetchone() is not None
+
+    def check_store_with_path_exists(self, path: str) -> bool:
+        self.cursor.execute(
+            """
+            SELECT name FROM stores WHERE location = ?
+            """,
+            (path,),
         )
         return self.cursor.fetchone() is not None
