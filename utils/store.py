@@ -152,7 +152,7 @@ class Store:
                     WITH SearchResults(rowid, distance) AS (
                         VALUES {','.join(f'({row[0]}, {row[1]})' for row in search_results)}
                     )
-                    SELECT knowledge_base.rowid, title, content, SearchResults.distance
+                    SELECT knowledge_base.rowid, title, content, path, type, SearchResults.distance
                     FROM knowledge_base
                     INNER JOIN SearchResults ON knowledge_base.rowid = SearchResults.rowid
                     ORDER BY SearchResults.distance ASC;

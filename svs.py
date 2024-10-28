@@ -11,9 +11,12 @@ from dotenv import load_dotenv
 from utils.datastore import Datastore
 from utils.processing import Processor
 from utils.store import Store
+from rich.console import Console
+from rich.markdown import Markdown
 
 load_dotenv()
 
+console = Console()
 datastore = Datastore("datastore")
 
 
@@ -40,7 +43,7 @@ def add(name: str, path: str):
     Add a
     """
     abs_path = get_absolute_path(path)
-    print(f'Adding "{name}" to store with location {abs_path}')
+    console.print(f'Adding "{name}" to store with location {abs_path}')
     datastore.add_new_store(name, abs_path)
 
 
@@ -50,15 +53,15 @@ def get(name: Optional[str]):
     """
     Gets a store by name, or all the stores if no name is provided.
     """
-    print("\n\n")
+    console.print("\n\n")
     if name is None:
         ss = datastore.get_all_db_stores()
-        print("All stores:\n")
+        console.print("All stores:\n")
         for s in ss:
-            print(f"- {s[0]} {s[1]}\n")
+            console.print(f"- {s[0]} {s[1]}\n")
     else:
         s = datastore.get_db_store(name)
-        print(f"Store {s[0]}:\n")
+        console.print(f"Store {s[0]}:\n")
 
 
 @click.command()
@@ -72,11 +75,11 @@ def reset():
     if answer == "RESET":
         try:
             datastore.hard_reset()
-            print("Datastore reset successfully.")
+            console.print("Datastore reset successfully.")
         except ValueError as e:
-            print("Error resetting datastore: ", e, file=sys.stderr)
+            console.print("Error resetting datastore: ", e)
         except Exception as e:
-            print(
+            console.print(
                 "An error occurred while resetting the datastore: ", e, file=sys.stderr
             )
 
@@ -106,18 +109,17 @@ def build(name):
     """
     Build a store.
     """
-    print(f"Attempting to build store {name}")
+    console.print(f"Attempting to build store {name}")
     try:
         s = datastore.get_store(name)
         store_data = datastore.get_db_store(name)
         processor = Processor(
             directory=store_data[1],
             store=s,
-            file_types_to_process=[".md", ".txt", ".html"],
         )
         processor.run_build()
     except ValueError as e:
-        print("Error building store: ", e)
+        console.print("Error building store: ", e)
 
 
 @click.command()
@@ -130,7 +132,7 @@ def search(name, query, column):
     """
     Searches a given store based on a query.
     """
-    print(f"Searching store {name} for query '{query}' in column {column}")
+    console.print(f"Searching store {name} for query '{query}' in column {column}")
     try:
         if column not in ["title", "content"]:
             raise Exception("Invalid column, must be either 'title' or 'content'")
@@ -140,11 +142,11 @@ def search(name, query, column):
         results = s.search_and_map_similar_items(query, column)
 
         for result in results:
-            print(
-                f"({result[0]}) {result[1]}:\n\n {Store.get_content_summary(result[2], 256)}\n\n\n"
+            console.print(
+                Markdown(f"({result[0]}) {result[1]}:\n\n {Store.get_content_summary(result[2], 256)}\n\n\n")
             )
     except Exception as e:
-        print("Error searching store: ", e)
+        console.print("Error searching store: ", e)
 
 
 @click.command()
@@ -153,18 +155,17 @@ def sync(name):
     """
     Sync a store.
     """
-    print(f"Attempting to sync store {name}")
+    console.print(f"Attempting to sync store {name}")
     try:
         s = datastore.get_store(name)
         store_data = datastore.get_db_store(name)
         processor = Processor(
             directory=store_data[1],
             store=s,
-            file_types_to_process=[".md", ".txt", ".html"],
         )
         processor.run_sync()
     except ValueError as e:
-        print("Error syncing store: ", e)
+        console.print("Error syncing store: ", e)
 
 
 @click.command()
@@ -174,12 +175,12 @@ def rename(name, new_name):
     """
     Rename a store.
     """
-    print(f"Attempting to rename store {name} to {new_name}")
+    console.print(f"Attempting to rename store {name} to {new_name}")
     try:
         datastore.rename_store(name, new_name)
-        print(f"Store {name} renamed to {new_name}")
+        console.print(f"Store {name} renamed to {new_name}")
     except ValueError as e:
-        print("Error renaming store: ", e)
+        console.print("Error renaming store: ", e)
 
 
 @click.command()
@@ -188,12 +189,12 @@ def remove(name):
     """
     Remove a store.
     """
-    print(f"Attempting to remove store {name}")
+    console.print(f"Attempting to remove store {name}")
     try:
         datastore.remove_store(name)
-        print(f"Store {name} removed")
+        console.print(f"Store {name} removed")
     except ValueError as e:
-        print("Error removing store: ", e)
+        console.print("Error removing store: ", e)
 
 
 store.add_command(build)

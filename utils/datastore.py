@@ -20,7 +20,6 @@ class Datastore:
 
         self.location = location
         self.db_path = os.path.join(self.location, "datastore.db")
-        print("Database file: ", self.db_path)
         self.conn = sqlite3.connect(self.db_path)
         self.cursor = self.conn.cursor()
 

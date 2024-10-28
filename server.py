@@ -3,6 +3,7 @@ import time
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 from utils.datastore import Datastore
+from utils.processing import Processor
 
 load_dotenv()
 
@@ -53,7 +54,7 @@ def get_store_by_query_params():
                     "message": f"Successfully retrieved store with path '{path}'.",
                     "data": store_details,
                 }
-            )
+            ), 200
 
         if name:
             datastore = get_datastore()
@@ -72,7 +73,9 @@ def get_store_by_query_params():
                     "message": f"Successfully retrieved store '{name}'.",
                     "data": store_details,
                 }
-            )
+            ), 200
+
+        return jsonify({"message": "Name or path query parameters are required."}), 400
     except Exception as e:
         return jsonify({"message": f"Error retrieving store: {e}"}), 500
 
@@ -88,10 +91,10 @@ def get_store(name: str):
         if not store_exists:
             return jsonify({"message": f"Store '{name}' does not exist."}), 404
 
-        store = datastore.get_store(name)
+        store = datastore.get_db_store(name)
         store_details = {
-            "name": store.get_name(),
-            "path": store.get_db_path(),
+            "name": store[0],
+            "path": store[1],
         }
 
         return jsonify(
@@ -102,7 +105,6 @@ def get_store(name: str):
         )
     except Exception as e:
         return jsonify({"message": f"Error retrieving store: {e}"}), 500
-
 
 @app.route("/stores", methods=["POST"])
 def create_store():
@@ -171,7 +173,9 @@ def search_store(name: str):
                     "id": result[0],
                     "title": result[1],
                     "content": result[2],
-                    "distance": result[3],
+                    "path": result[3],
+                    "type": result[4],
+                    "distance": result[5],
                 }
             )
 
@@ -189,5 +193,60 @@ def search_store(name: str):
         return jsonify({"message": f"Error searching store: {e}"}), 500
 
 
+@app.route("/stores/<name>/sync", methods=["POST"])
+def sync_store(name: str):
+    """
+    Syncs a store by name.
+    """
+    try:
+        start_time = time.time()
+        datastore = get_datastore()
+        s = datastore.get_store(name)
+        store_data = datastore.get_db_store(name)
+        processor = Processor(
+            directory=store_data[1],
+            store=s,
+        )
+        processor.run_sync()
+        end_time = time.time()
+        time_taken = end_time - start_time
+        time_taken_ms = round(time_taken * 1000, 2)
+
+        return jsonify(
+            {
+                "message": f"Successfully synced store '{name}' in {time_taken_ms}ms",
+            }
+        )
+    except ValueError as e:
+        return jsonify({"message": f"Error syncing store: {e}"}), 500
+
+@app.route("/stores/<name>/build", methods=["POST"])
+def build_store(name: str):
+    """
+    Builds a store by name.
+    """
+    try:
+        start_time = time.time()
+        datastore = get_datastore()
+        s = datastore.get_store(name)
+        store_data = datastore.get_db_store(name)
+        processor = Processor(
+            directory=store_data[1],
+            store=s,
+        )
+        processor.run_build()
+        end_time = time.time()
+        time_taken = end_time - start_time
+        time_taken_ms = round(time_taken * 1000, 2)
+
+        return jsonify(
+            {
+                "message": f"Successfully built store '{name}' in {time_taken_ms}ms",
+            }
+        )
+    except ValueError as e:
+        return jsonify({"message": f"Error building store: {e}"}), 500
+
+
 if __name__ == "__main__":
-    app.run(port=PORT, debug=True)
+    app.run(port=int(PORT), debug=True)
