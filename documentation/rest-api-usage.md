@@ -30,7 +30,7 @@ The server has a few endpoints that you can use to interact with your stores. He
      - 200: Successfully retrieved stores.
      - 500: Error retrieving stores.
 
-2. **GET /stores/<name>**
+2. **GET /stores/[name]**
    - **Description:** Retrieves a store by name.
    - **Path Parameters:**
      - `name`: The name of the store.
@@ -49,7 +49,7 @@ The server has a few endpoints that you can use to interact with your stores. He
      - 400: Name and path are required, or store already exists.
      - 500: Error creating store.
 
-4. **GET /stores/<name>/search**
+4. **GET /stores/[name]/search**
    - **Description:** Searches a store by name using query parameters.
    - **Path Parameters:**
      - `name`: The name of the store.
@@ -63,7 +63,7 @@ The server has a few endpoints that you can use to interact with your stores. He
      - 404: Store does not exist.
      - 500: Error searching store.
 
-5. **POST /stores/<name>/search**
+5. **POST /stores/[name]/search**
    - **Description:** Searches a store by name using a JSON request body.
    - **Path Parameters:**
      - `name`: The name of the store.
@@ -77,7 +77,7 @@ The server has a few endpoints that you can use to interact with your stores. He
      - 404: Store does not exist.
      - 500: Error searching store.
 
-6. **POST /stores/<name>/sync**
+6. **POST /stores/[name]/sync**
    - **Description:** Syncs a store by name.
    - **Path Parameters:**
      - `name`: The name of the store.
@@ -85,7 +85,7 @@ The server has a few endpoints that you can use to interact with your stores. He
      - 200: Successfully synced store.
      - 500: Error syncing store.
 
-7. **POST /stores/<name>/build**
+7. **POST /stores/[name]/build**
    - **Description:** Builds a store by name.
    - **Path Parameters:**
      - `name`: The name of the store.
