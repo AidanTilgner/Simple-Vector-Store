@@ -31,7 +31,19 @@ These aren't "planned" per-se, but if people show interest then I'd be willing t
 - Support for multiple embeddings models
 
 ## Getting Setup
-The simplest way to get started is to clone this repo:
+The simplest way to get started is to run the following command:
+
+**Macos/Linux**
+```bash
+curl -s https://raw.githubusercontent.com/AidanTilgner/Simple-Vector-Store/refs/heads/trunk/scripts/setup.sh | bash
+```
+
+**Windows**
+```bash
+curl -s https://raw.githubusercontent.com/AidanTilgner/Simple-Vector-Store/refs/heads/trunk/scripts/setup.ps1 | pwsh
+```
+
+Alternatively, you can follow these steps to get setup:
 
 ```bash
 git clone https://github.com/AidanTilgner/Simple-Vector-Store.git
