@@ -143,7 +143,9 @@ def search(name, query, column):
 
         for result in results:
             console.print(
-                Markdown(f"({result[0]}) {result[1]}:\n\n {Store.get_content_summary(result[2], 256)}\n\n\n")
+                Markdown(
+                    f"({result[0]}) {result[1]}:\n\n {Store.get_content_summary(result[2], 256)}\n\n\n"
+                )
             )
     except Exception as e:
         console.print("Error searching store: ", e)

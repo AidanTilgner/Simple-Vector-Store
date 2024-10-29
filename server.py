@@ -7,7 +7,12 @@ from utils.processing import Processor
 
 load_dotenv()
 
-PORT = os.environ["SERVER_PORT"] if "SERVER_PORT" in os.environ else 8000
+PORT = (
+    int(os.environ["SERVER_PORT"])
+    if "SERVER_PORT" in os.environ and isinstance(os.environ["SERVER_PORT"], int)
+    else 8000
+)
+ENV = os.environ.get("SERVER_ENV", "production")  # default to 'production'
 
 app = Flask(__name__)
 
@@ -20,64 +25,25 @@ def get_datastore():
 
 
 @app.route("/stores", methods=["GET"])
-def get_store_by_query_params():
+def get_stores():
     """
-    Retrieves a store by name and path from query parameters.
+    Retrieves all stores.
     """
     try:
-        name = request.args.get("name")
-        path = request.args.get("path")
-
-        if not name and not path:
-            return jsonify(
-                {"message": "Name or path query parameters are required."}
-            ), 400
-
         datastore = get_datastore()
+        stores = datastore.get_all_db_stores()
+        store_details = [
+            {"name": store[0], "location": store[1]} for store in stores
+        ]
 
-        if path:
-            store_with_path = datastore.get_store_by_absolute_path(path)
-            if not store_with_path:
-                store_with_path = datastore.get_store_by_relative_path(path)
-            if not store_with_path:
-                return jsonify(
-                    {"message": f"Store with path '{path}' does not exist."}
-                ), 404
-
-            store_details = {
-                "name": store_with_path.get_name(),
-                "path": store_with_path.get_db_path(),
+        return jsonify(
+            {
+                "message": f"Successfully retrieved {len(stores)} store(s).",
+                "data": store_details,
             }
-
-            return jsonify(
-                {
-                    "message": f"Successfully retrieved store with path '{path}'.",
-                    "data": store_details,
-                }
-            ), 200
-
-        if name:
-            datastore = get_datastore()
-            store_exists = datastore.check_store_exists(name)
-            if not store_exists:
-                return jsonify({"message": f"Store '{name}' does not exist."}), 404
-
-            store = datastore.get_store(name)
-            store_details = {
-                "name": store.get_name(),
-                "path": path,  # Assuming you want to include the path in the response
-            }
-
-            return jsonify(
-                {
-                    "message": f"Successfully retrieved store '{name}'.",
-                    "data": store_details,
-                }
-            ), 200
-
-        return jsonify({"message": "Name or path query parameters are required."}), 400
+        )
     except Exception as e:
-        return jsonify({"message": f"Error retrieving store: {e}"}), 500
+        return jsonify({"message": f"Error retrieving stores: {e}"}), 500
 
 
 @app.route("/stores/<name>", methods=["GET"])
@@ -105,6 +71,7 @@ def get_store(name: str):
         )
     except Exception as e:
         return jsonify({"message": f"Error retrieving store: {e}"}), 500
+
 
 @app.route("/stores", methods=["POST"])
 def create_store():
@@ -192,6 +159,7 @@ def search_store(name: str):
     except Exception as e:
         return jsonify({"message": f"Error searching store: {e}"}), 500
 
+
 @app.route("/stores/<name>/search", methods=["POST"])
 def search_store_post(name: str):
     """
@@ -278,6 +246,7 @@ def sync_store(name: str):
     except ValueError as e:
         return jsonify({"message": f"Error syncing store: {e}"}), 500
 
+
 @app.route("/stores/<name>/build", methods=["POST"])
 def build_store(name: str):
     """
@@ -305,6 +274,33 @@ def build_store(name: str):
     except ValueError as e:
         return jsonify({"message": f"Error building store: {e}"}), 500
 
-
 if __name__ == "__main__":
-    app.run(port=int(PORT))
+    if ENV == "development":
+        # Run in development mode with Flask's built-in server
+        app.run(port=PORT, debug=True)
+    else:
+        # Run in production mode with Gunicorn
+        from gunicorn.app.base import BaseApplication
+
+        class GunicornApp(BaseApplication):
+            def __init__(self, app, options=None):
+                self.options = options or {}
+                self.application = app
+                super().__init__()
+
+            def load_config(self):
+                if self.cfg is not None:
+                    config = {key: value for key, value in self.options.items()
+                              if key in self.cfg.settings and value is not None}
+                    for key, value in config.items():
+                        self.cfg.set(key.lower(), value)
+
+            def load(self):
+                return self.application
+
+        options = {
+            'bind': f'0.0.0.0:{PORT}',
+            'workers': 4  # Adjust the number of workers as per your server's resources
+        }
+
+        GunicornApp(app, options).run()

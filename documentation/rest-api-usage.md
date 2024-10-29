@@ -101,6 +101,11 @@ The server has a few endpoints that you can use to interact with your stores. He
 ## Examples
 Here are some examples of how you can use the Simple Vector Store REST API:
 
+**Get stores:**
+```bash
+curl -X GET http://localhost:8000/stores
+```
+
 **Perform a search on a store:**
 ```bash
 curl -X POST http://localhost:8000/stores/my_store/search -d '{"query": "hello"}'

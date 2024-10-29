@@ -13,7 +13,9 @@ def get_embedding(text: str, model="text-embedding-ada-002") -> list[float]:
     try:
         character_limit = 8000
         cutoff_text = text[:character_limit]
-        return openai.embeddings.create(input=[cutoff_text], model=model).data[0].embedding
+        return (
+            openai.embeddings.create(input=[cutoff_text], model=model).data[0].embedding
+        )
     except Exception as e:
         print(f"Error generating embeddings: {e}")
         raise e
