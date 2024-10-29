@@ -138,26 +138,7 @@ There are two base commands as of now, each with a few subcommands:
     - `remove <name>`: remove a given store from the datastore
 
 ## REST API Usage
-You can set up a little server to return results from a given store, by running the `server.py` script:
-
-```bash
-python server.py
-```
-
-> You can provide a SERVER_PORT variable in your `.env` file to override the default of `8000`
-
-This will expose a `search` endpoint, which will return results of the search: `GET /stores/<name>/search`
-
-You can make a GET request to this endpoint, while providing the following query paramters:
-- `query`: the query to search
-- `column`: "content" or "title", "content" is the default
-- `limit`: the amount of results which the query should return, default is 10
-
-So, an example request would look like this:
-
-```
-http://localhost:8000/stores/test_store/search?query="test query"&limit=10&column=content
-```
+Learn about how to use the REST API script [here](/documentation/rest-api-usage.md).
 
 ## Troubleshooting
 There are a few gotchas that you should be aware of.
