@@ -192,6 +192,64 @@ def search_store(name: str):
     except Exception as e:
         return jsonify({"message": f"Error searching store: {e}"}), 500
 
+@app.route("/stores/<name>/search", methods=["POST"])
+def search_store_post(name: str):
+    """
+    Searches a store by name.
+    """
+    try:
+        start_time = time.time()
+
+        datastore = get_datastore()
+        store_exists = datastore.check_store_exists(name)
+        if not store_exists:
+            return jsonify({"message": f"Store '{name}' does not exist."}), 404
+
+        store = datastore.get_store(name)
+        data = request.get_json()
+        if data is None:
+            return jsonify({"message": "No data provided."}), 400
+        query = data.get("query")
+        if query is None:
+            return jsonify({"message": "No query provided."}), 400
+        column = data.get("column")
+        if column is None:
+            column = "content"
+        limit = data.get("limit")
+        if limit is None:
+            limit = 10
+        else:
+            limit = int(limit)
+
+        results = store.search_and_map_similar_items(
+            query=query, search_in=column, limit=limit
+        )
+        results_list = []
+        for result in results:
+            results_list.append(
+                {
+                    "id": result[0],
+                    "title": result[1],
+                    "content": result[2],
+                    "path": result[3],
+                    "type": result[4],
+                    "distance": result[5],
+                }
+            )
+
+        end_time = time.time()
+        time_taken = end_time - start_time
+        time_taken_ms = round(time_taken * 1000, 2)
+
+        return jsonify(
+            {
+                "message": f"Successfully searched store '{name}' for query '{query}' in column '{column}', in {time_taken_ms}ms",
+                "data": results_list,
+            }
+        )
+    except Exception as e:
+        return jsonify({"message": f"Error searching store: {e}"}), 500
+
 
 @app.route("/stores/<name>/sync", methods=["POST"])
 def sync_store(name: str):
