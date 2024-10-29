@@ -15,25 +15,20 @@ python server.py
 # Endpoints
 The server has a few endpoints that you can use to interact with your stores. Here's a list of them:
 
-- **GET /stores**: Retrieve store by name or path.
-- **GET /stores/<name>**: Retrieve store by name.
+- **GET /stores**: Retrieves all stores.
+- **GET /stores/[name]**: Retrieve store by name.
 - **POST /stores**: Create a new store.
-- **GET /stores/<name>/search**: Search store by name using query parameters.
-- **POST /stores/<name>/search**: Search store by name using JSON request body.
-- **POST /stores/<name>/sync**: Sync store by name.
-- **POST /stores/<name>/build**: Build store by name.
+- **GET /stores/[name]/search**: Search store by name using query parameters.
+- **POST /stores/[name]/search**: Search store by name using JSON request body.
+- **POST /stores/[name]/sync**: Sync store by name.
+- **POST /stores/[name]/build**: Build store by name.
 
 ## Documentation
 1. **GET /stores**
-   - **Description:** Retrieves a store by name or path from query parameters.
-   - **Query Parameters:**
-     - `name` (optional): The name of the store.
-     - `path` (optional): The path of the store.
+   - **Description:** Retrieves all stores
    - **Responses:**
-     - 200: Successfully retrieved store.
-     - 400: Name or path query parameters are required.
-     - 404: Store does not exist.
-     - 500: Error retrieving store.
+     - 200: Successfully retrieved stores.
+     - 500: Error retrieving stores.
 
 2. **GET /stores/<name>**
    - **Description:** Retrieves a store by name.
