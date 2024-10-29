@@ -249,4 +249,4 @@ def build_store(name: str):
 
 
 if __name__ == "__main__":
-    app.run(port=int(PORT), debug=True)
+    app.run(port=int(PORT))
