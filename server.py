@@ -32,9 +32,7 @@ def get_stores():
     try:
         datastore = get_datastore()
         stores = datastore.get_all_db_stores()
-        store_details = [
-            {"name": store[0], "location": store[1]} for store in stores
-        ]
+        store_details = [{"name": store[0], "location": store[1]} for store in stores]
 
         return jsonify(
             {
@@ -129,6 +127,11 @@ def search_store(name: str):
             limit = 10
         else:
             limit = int(limit)
+        threshold = request.args.get("threshold")
+        if threshold is None:
+            threshold = 0.5
+        else:
+            threshold = float(threshold)
 
         results = store.search_and_map_similar_items(
             query=query, search_in=column, limit=limit
@@ -188,9 +191,14 @@ def search_store_post(name: str):
             limit = 10
         else:
             limit = int(limit)
+        threshold = data.get("threshold")
+        if threshold is None:
+            threshold = 0.5
+        else:
+            threshold = float(threshold)
 
         results = store.search_and_map_similar_items(
-            query=query, search_in=column, limit=limit
+            query=query, search_in=column, limit=limit, threshold=threshold
         )
         results_list = []
         for result in results:
@@ -274,6 +282,7 @@ def build_store(name: str):
     except ValueError as e:
         return jsonify({"message": f"Error building store: {e}"}), 500
 
+
 if __name__ == "__main__":
     if ENV == "development":
         # Run in development mode with Flask's built-in server
@@ -290,8 +299,11 @@ if __name__ == "__main__":
 
             def load_config(self):
                 if self.cfg is not None:
-                    config = {key: value for key, value in self.options.items()
-                              if key in self.cfg.settings and value is not None}
+                    config = {
+                        key: value
+                        for key, value in self.options.items()
+                        if key in self.cfg.settings and value is not None
+                    }
                     for key, value in config.items():
                         self.cfg.set(key.lower(), value)
 
@@ -299,8 +311,8 @@ if __name__ == "__main__":
                 return self.application
 
         options = {
-            'bind': f'0.0.0.0:{PORT}',
-            'workers': 4  # Adjust the number of workers as per your server's resources
+            "bind": f"0.0.0.0:{PORT}",
+            "workers": 4,  # Adjust the number of workers as per your server's resources
         }
 
         GunicornApp(app, options).run()

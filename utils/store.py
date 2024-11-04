@@ -1,4 +1,6 @@
 import sqlite3
+
+from gunicorn.reloader import threading
 from utils.embeddings import OpenAIClient
 import sqlite_vss
 import array
@@ -131,14 +133,17 @@ class Store:
         # Fetch and return the results
         return self.cursor.fetchall()
 
-    def search_and_map_similar_items(self, query: str, search_in="content", limit=10):
+    def search_and_map_similar_items(self, query: str, search_in="content", limit=10, threshold=0.5):
         """
         Search for items similar to the given query, and map the results to the corresponding rows in the knowledge base.
 
         :param query: The query string to search for.
         :param search_in: The column to search in ('title' or 'content').
+        :param limit: The maximum number of results to return.
+        :param threshold: The similarity threshold to filter the results.
         :return: A list of tuples containing the rowid and similarity distance of the matching items.
         """
+
         if self.is_knowledge_base_empty():
             return []
         # Generate the embedding for the query
@@ -160,12 +165,14 @@ class Store:
         )
         search_results = self.cursor.fetchall()
 
+        filtered_results = [(rowid, dist) for rowid, dist in search_results if dist <= threshold]
+
         results = []
-        if search_results:
+        if filtered_results:
             self.cursor.execute(
                 f"""
                     WITH SearchResults(rowid, distance) AS (
-                        VALUES {','.join(f'({row[0]}, {row[1]})' for row in search_results)}
+                        VALUES {','.join(f'({row[0]}, {row[1]})' for row in filtered_results)}
                     )
                     SELECT knowledge_base.rowid, title, content, path, type, SearchResults.distance
                     FROM knowledge_base
