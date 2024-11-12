@@ -90,7 +90,6 @@ def create_store():
             return jsonify({"message": f"Store '{name}' already exists."}), 400
 
         path_exists = datastore.check_store_with_path_exists(path)
-        print("Store already exists: ", path_exists, path)
         if path_exists:
             return jsonify(
                 {"message": f"Store with path '{path}' already exists."}
