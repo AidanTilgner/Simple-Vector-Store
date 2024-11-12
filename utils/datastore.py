@@ -2,7 +2,7 @@
 A file to deal with utilities relating to the global datastore.
 """
 
-import sqlite3
+import sqlean as sqlite3
 import os
 import shutil
 from typing import Tuple
@@ -80,6 +80,8 @@ class Datastore:
 
     def get_store(self, name: str) -> Store:
         try:
+            if not os.path.exists(os.path.join(self.location, name)):
+                raise FileNotFoundError(f"Store {name} not found")
             return Store(name=name, path=os.path.join(self.location, name, "data.db"))
         except Exception as e:
             print(f"Error getting store {name}: {e}")

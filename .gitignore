@@ -1,15 +1,10 @@
 svs-env/
 __pycache__/
 .env
-
+venv/
 .vscode/
-
 test-files/
-
 db.sqlite
-
 config.yaml
-
 *.db
-
 pyrightconfig.json

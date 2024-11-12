@@ -244,6 +244,7 @@ class Processor:
         - File is on datastore but doesn't exist on disk
         - File is on disk but doesn't exist in datastore
         """
+        # edge case where the db has no files and the directory has no files, nothing to do
         deleted_files = self.identify_deleted_files()
         click.echo(f"\nFound {len(deleted_files)} files to delete.")
 
@@ -286,6 +287,9 @@ class Processor:
         processable_files = self.get_all_directory_processable_files()
         db_files = [item[0] for item in self.store.get_all_titles()]
 
+        if len(processable_files) == 0:
+            return []
+
         new_files = []
 
         for file in processable_files:
@@ -302,6 +306,9 @@ class Processor:
         """
         processable_files = self.get_all_directory_processable_files()
         db_files = [(item[0], item[1], item[2]) for item in self.store.get_all()]
+
+        if len(db_files) == 0:
+            return []
 
         deleted_files = []
 

@@ -1,4 +1,5 @@
-import sqlite3
+import sqlite3 as sql3
+import sqlean as sqlite3
 
 from gunicorn.reloader import threading
 from utils.embeddings import OpenAIClient
@@ -11,8 +12,8 @@ opc = OpenAIClient()
 class Store:
     name: str
     db_path: str
-    conn: sqlite3.Connection
-    cursor: sqlite3.Cursor
+    conn: sql3.Connection
+    cursor: sql3.Cursor
 
     def __init__(self, name, path):
         self.name = name
