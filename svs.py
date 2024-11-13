@@ -128,7 +128,9 @@ def build(name):
 @click.option(
     "--column", help="The column to search in (title or content).", default="content"
 )
-def search(name, query, column):
+@click.option("--limit", help="The number of results to return.", default=5)
+@click.option("--threshold", help="The threshold for similarity.", default=0.5)
+def search(name, query, column, limit, threshold):
     """
     Searches a given store based on a query.
     """
@@ -139,7 +141,7 @@ def search(name, query, column):
         if column is None:
             column = "content"
         s = datastore.get_store(name)
-        results = s.search_and_map_similar_items(query, column)
+        results = s.search_and_map_similar_items(query, column, limit, threshold)
 
         for result in results:
             console.print(
