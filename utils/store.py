@@ -134,7 +134,9 @@ class Store:
         # Fetch and return the results
         return self.cursor.fetchall()
 
-    def search_and_map_similar_items(self, query: str, search_in="content", limit=10, threshold=0.5):
+    def search_and_map_similar_items(
+        self, query: str, search_in="content", limit=10, threshold=0.5
+    ):
         """
         Search for items similar to the given query, and map the results to the corresponding rows in the knowledge base.
 
@@ -166,7 +168,9 @@ class Store:
         )
         search_results = self.cursor.fetchall()
 
-        filtered_results = [(rowid, dist) for rowid, dist in search_results if dist <= threshold]
+        filtered_results = [
+            (rowid, dist) for rowid, dist in search_results if dist <= threshold
+        ]
 
         results = []
         if filtered_results:

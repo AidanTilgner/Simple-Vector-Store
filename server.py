@@ -7,11 +7,7 @@ from utils.processing import Processor
 
 load_dotenv()
 
-PORT = (
-    int(os.environ["SERVER_PORT"])
-    if "SERVER_PORT" in os.environ and isinstance(os.environ["SERVER_PORT"], int)
-    else 8000
-)
+
 ENV = os.environ.get("SERVER_ENV", "production")  # default to 'production'
 
 app = Flask(__name__)
@@ -284,6 +280,12 @@ def build_store(name: str):
 
 
 if __name__ == "__main__":
+    PORT = (
+        int(os.environ["SERVER_PORT"])
+        if "SERVER_PORT" in os.environ
+        and isinstance(int(os.environ["SERVER_PORT"]), int)
+        else 8000
+    )
     if ENV == "development":
         # Run in development mode with Flask's built-in server
         app.run(port=PORT, debug=True)
